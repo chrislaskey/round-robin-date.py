@@ -30,7 +30,7 @@ class TestRoundRobinDateOptionsParser():
 
     def test_set_option_string_start_date(self):
         "Test setting start date as string"
-        new_start_date_value = {"start_date": "20101105"}
+        new_start_date_value = {"start_date": "2010-11-05"}
         expected_parsed_result = date(2010, 11, 05)
         self.options_parser.set_options(new_start_date_value)
         returned_options = self.options_parser.get_options()

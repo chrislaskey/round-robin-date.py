@@ -37,34 +37,6 @@ class TestRoundRobinDate():
         assert_equal(result.month, 1)
         assert_equal(result.year, 2010)
 
-    def test__get_next_month(self):
-        expected = 2
-        result = self.rrd._get_next_month(1)
-        assert_equal(result, expected)
-
-        expected = 1
-        result = self.rrd._get_next_month(12)
-        assert_equal(result, expected)
-
-    def test__get_days_in_month(self):
-        result = self.rrd._get_days_in_month(1, 2010)
-        assert_equal(result, 31, "Testing 31 day month")
-
-        result = self.rrd._get_days_in_month(4, 2010)
-        assert_equal(result, 30, "Testing 30 day month")
-
-        result = self.rrd._get_days_in_month(2, 2010)
-        assert_equal(result, 28, "Testing non-leap year")
-
-        result = self.rrd._get_days_in_month(2, 2012)
-        assert_equal(result, 29, "Testing leap year")
-
-        try:
-            result = self.rrd._get_days_in_month("4", "2010")
-            assert False
-        except TypeError:
-            assert True
-
     def test__get_current_date(self):
         """
         For testing purposes the original method is overwritten in the child
@@ -90,7 +62,7 @@ class TestRoundRobinDate():
 
     def test_set_option_string_start_date(self):
         "Test setting start date as string"
-        new_start_date_value = {"start_date": "20101105"}
+        new_start_date_value = {"start_date": "2010-11-05"}
         expected_parsed_result = date(2010, 11, 05)
         self.rrd.set_options(new_start_date_value)
         returned_options = self.rrd.get_options()
@@ -110,3 +82,171 @@ class TestRoundRobinDate():
         result = self.rrd.get_options()
         assert_equal(result, new_options)
 
+    def test_get_dates_with_no_retain_options(self):
+        new_options = {
+            "days_to_retain": 0,
+            "weeks_to_retain": 0,
+            "months_to_retain": 0,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = {}
+        result = self.rrd.get_dates()
+        assert_equal(result, expected)
+
+    def test_get_dates_with_retain_days_options(self):
+        new_options = {
+            "start_date": "2010-12-30",
+            "days_to_retain": 3,
+            "weeks_to_retain": 0,
+            "months_to_retain": 0,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = {
+            "2010-12-30": date(2010, 12, 30),
+            "2010-12-31": date(2010, 12, 31),
+            "2011-01-01": date(2011, 1, 1),
+        }
+        result = self.rrd.get_dates()
+        assert_equal(result, expected)
+
+    def test_get_dates_as_strings_with_retain_days_options(self):
+        new_options = {
+            "start_date": "2010-12-30",
+            "days_to_retain": 3,
+            "weeks_to_retain": 0,
+            "months_to_retain": 0,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = ["2010-12-30", "2010-12-31", "2011-01-01"]
+        result = self.rrd.get_dates_as_strings()
+        assert_equal(result, expected)
+
+
+    def test_get_dates_with_retain_weeks_options(self):
+        new_options = {
+            "start_date": "2010-12-30",
+            "days_to_retain": 0,
+            "weeks_to_retain": 2,
+            "months_to_retain": 0,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = {
+            "2011-01-06": date(2011, 1, 6),
+            "2011-01-13": date(2011, 1, 13),
+        }
+        result = self.rrd.get_dates()
+        assert_equal(result, expected)
+
+    def test_get_dates_with_retain_months_options(self):
+        new_options = {
+            "start_date": "2012-02-29",
+            "days_to_retain": 0,
+            "weeks_to_retain": 0,
+            "months_to_retain": 6,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = {
+            "2012-03-28": date(2012, 3, 28),
+            "2012-04-28": date(2012, 4, 28),
+            "2012-05-28": date(2012, 5, 28),
+            "2012-06-28": date(2012, 6, 28),
+            "2012-07-28": date(2012, 7, 28),
+            "2012-08-28": date(2012, 8, 28)
+        }
+        result = self.rrd.get_dates()
+        assert_equal(result, expected)
+
+    def test_get_dates_with_retain_years_options(self):
+        new_options = {
+            "start_date": "2012-02-29",
+            "days_to_retain": 0,
+            "weeks_to_retain": 0,
+            "months_to_retain": 0,
+            "years_to_retain": 5
+        }
+        self.rrd.set_options(new_options)
+
+        expected = {
+            "2013-02-28": date(2013, 2, 28),
+            "2014-02-28": date(2014, 2, 28),
+            "2015-02-28": date(2015, 2, 28),
+            "2016-02-28": date(2016, 2, 28),
+            "2017-02-28": date(2017, 2, 28),
+        }
+        result = self.rrd.get_dates()
+        assert_equal(result, expected)
+
+    def test_get_dates_as_strings_with_day_and_week_retain_options(self):
+        new_options = {
+            "start_date": "2012-02-29",
+            "days_to_retain": 9,
+            "weeks_to_retain": 1,
+            "months_to_retain": 0,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = [
+            "2012-02-29",
+            "2012-03-01",
+            "2012-03-02",
+            "2012-03-03",
+            "2012-03-04",
+            "2012-03-05",
+            "2012-03-06",
+            "2012-03-07",
+            "2012-03-08"
+        ]
+        result = self.rrd.get_dates_as_strings()
+        assert_equal(result, expected, "Test overlapping dates collapse")
+
+    def test_get_dates_as_strings_with_week_and_month_retain_options(self):
+        "Illustrate week and month boundaries do not necessarily overlap"
+        new_options = {
+            "start_date": "2012-01-01",
+            "days_to_retain": 0,
+            "weeks_to_retain": 5,
+            "months_to_retain": 1,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = [
+            "2012-01-08",
+            "2012-01-15",
+            "2012-01-22",
+            "2012-01-29",
+            "2012-02-01",
+            "2012-02-05",
+        ]
+        result = self.rrd.get_dates_as_strings()
+        assert_equal(result, expected, "Test overlapping dates collapse")
+
+    def test_get_dates_with_all_options(self):
+        new_options = {
+            "start_date": "2012-02-29",
+            "days_to_retain": 1,
+            "weeks_to_retain": 1,
+            "months_to_retain": 1,
+            "years_to_retain": 1
+        }
+        self.rrd.set_options(new_options)
+
+        expected = {
+            "2012-02-29": date(2012, 2, 29),
+            "2012-03-07": date(2012, 3, 7),
+            "2012-03-28": date(2012, 3, 28),
+            "2013-02-28": date(2013, 2, 28),
+        }
+        result = dict(self.rrd.get_dates())
+        assert_equal(result, expected)

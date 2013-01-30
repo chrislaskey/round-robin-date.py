@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
 from datetime import date, timedelta
+from collections import OrderedDict
+
+# TODO: The returned dates are currently backwards. Counting from start_date
+# forward. Next step is to switch it to be backwards from start date.
 
 class RoundRobinDate:
 
@@ -16,23 +20,108 @@ class RoundRobinDate:
     def get_options(self):
         return self.options.copy()
 
-    def _get_days_in_month(self, month, year=""):
-        "Get days by subtracting a day from the beginning of next month"
-        next_month = self._get_next_month(month)
-        if not year:
-            year = date.today().year
-        last_day_of_month = date(year, next_month, 1) - timedelta(days=1)
-        return last_day_of_month.day
-
-    def _get_next_month(self, month):
-        if month == 12:
-            return 1
-        else:
-            return month + 1
-
     def _get_current_date(self):
-        "Abstracted to a method to allow unit tests to set 'today'"
+        "Abstracted to a method to allow unit tests to set value of 'today'"
         return date.today()
+
+    def get_dates(self):
+        dates = self._generate_dates()
+        return dates
+
+    def _generate_dates(self):
+        dates = OrderedDict()
+        dates.update(self._generate_day_dates())
+        dates.update(self._generate_week_dates())
+        dates.update(self._generate_month_dates())
+        dates.update(self._generate_year_dates())
+        return dates
+
+    def _generate_day_dates(self):
+        dates = {}
+        current_date = self.options.get("start_date")
+        number_to_generate = self.options.get("days_to_retain")
+        if number_to_generate > 0: # Include start_date
+            date_dict = self._generate_date_dict(current_date)
+            dates.update(date_dict)
+            number_to_generate = number_to_generate - 1
+        for i in xrange(number_to_generate):
+            current_date = self._get_next_day(current_date)
+            date_dict = self._generate_date_dict(current_date)
+            dates.update(date_dict)
+        return dates
+
+    def _generate_date_dict(self, input_date):
+        date_key = input_date.isoformat()
+        date_value = input_date
+        date_dict = {date_key: date_value}
+        return date_dict
+
+    def _get_next_day(self, input_date):
+        next_day = input_date + timedelta(days=1)
+        return next_day
+
+    def _generate_week_dates(self):
+        dates = {}
+        current_date = self.options.get("start_date")
+        number_to_generate = self.options.get("weeks_to_retain")
+        for i in xrange(number_to_generate):
+            current_date = self._get_next_week(current_date)
+            date_dict = self._generate_date_dict(current_date)
+            dates.update(date_dict)
+        return dates
+
+    def _get_next_week(self, input_date):
+        next_week = input_date + timedelta(weeks=1)
+        return next_week
+
+    def _generate_month_dates(self):
+        dates = {}
+        current_date = self.options.get("start_date")
+        number_to_generate = self.options.get("months_to_retain")
+        for i in xrange(number_to_generate):
+            current_date = self._get_next_month(current_date)
+            date_dict = self._generate_date_dict(current_date)
+            dates.update(date_dict)
+        return dates
+
+    def _get_next_month(self, input_date):
+        day = input_date.day
+        month = input_date.month
+        year = input_date.year
+        if day > 28:
+            day = 28
+        if month == 12:
+            month = 1
+            year = year + 1
+        else:
+            month = month + 1
+        next_month = date(year, month, day)
+        return next_month
+
+    def _generate_year_dates(self):
+        dates = {}
+        current_date = self.options.get("start_date")
+        number_to_generate = self.options.get("years_to_retain")
+        for i in xrange(number_to_generate):
+            current_date = self._get_next_year(current_date)
+            date_dict = self._generate_date_dict(current_date)
+            dates.update(date_dict)
+        return dates
+
+    def _get_next_year(self, input_date):
+        day = input_date.day
+        month = input_date.month
+        year = input_date.year
+        if day == 29 and month == 2:
+            day = 28
+        next_year = date(year + 1, month, day)
+        return next_year
+
+    def get_dates_as_strings(self):
+        dates = self.get_dates()
+        dates_list = list(dates)
+        dates_list.sort()
+        return dates_list
 
 class RoundRobinDateOptionsParser:
 
@@ -44,7 +133,7 @@ class RoundRobinDateOptionsParser:
         self.options = {}
         default_options = self._get_default_options()
         self.set_options(default_options)
-        
+
     def _get_default_options(self):
         default_options = {
             "start_date": date.today(),
@@ -81,12 +170,13 @@ class RoundRobinDateOptionsParser:
             )
 
     def _parse_string_date(self, input):
-        if len(input) < 8:
-            raise Exception("Invalid string date: must be in YYYYMMDD format")
+        if len(input) < 10:
+            raise Exception("Invalid string date: must be in ISO 8601 format,\
+                            'YYYY-MM-DD'")
         date_pieces = {
             "year": int(input[0:4]),
-            "month": int(input[4:6]),
-            "day": int(input[6:8])
+            "month": int(input[5:7]),
+            "day": int(input[8:10])
         }
         return date_pieces
 
