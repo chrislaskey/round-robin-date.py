@@ -30,11 +30,12 @@ class TestRoundRobinDate():
     def teardown(self):
         "Tear down test fixtures"
 
-    def test_string_representation(self):
-        "Test the class string representation via the magic method __str__"
-        expected = "Hello World"
-        result = self.rrd.__str__()
-        assert_equal(result, expected)
+    def test_set_current_date(self):
+        self.rrd.set_current_date(2010,01,05)
+        result = self.rrd._get_current_date()
+        assert_equal(result.day, 5)
+        assert_equal(result.month, 1)
+        assert_equal(result.year, 2010)
 
     def test__get_next_month(self):
         expected = 2
@@ -43,32 +44,6 @@ class TestRoundRobinDate():
 
         expected = 1
         result = self.rrd._get_next_month(12)
-        assert_equal(result, expected)
-
-    def test__get_previous_month(self):
-        expected = 12
-        result = self.rrd._get_previous_month(1)
-        assert_equal(result, expected)
-
-        expected = 1
-        result = self.rrd._get_previous_month(2)
-        assert_equal(result, expected)
-
-    def test_set_current_date(self):
-        self.rrd.set_current_date(2010,01,05)
-        result = self.rrd._get_current_date()
-        assert_equal(result.day, 5)
-        assert_equal(result.month, 1)
-        assert_equal(result.year, 2010)
-
-    def test__get_current_date(self):
-        """
-        For testing purposes the original method is overwritten in the child
-        testing class. This tests the original method.
-        """
-        original_rrd = RoundRobinDate()
-        expected = date.today()
-        result = original_rrd._get_current_date()
         assert_equal(result, expected)
 
     def test__get_days_in_month(self):
@@ -90,10 +65,14 @@ class TestRoundRobinDate():
         except TypeError:
             assert True
 
-    def test_default_options(self):
-        "Test the default options"
-        expected = self.rrd._get_default_options()
-        result = self.rrd.get_options()
+    def test__get_current_date(self):
+        """
+        For testing purposes the original method is overwritten in the child
+        testing class. This tests the original method.
+        """
+        original_rrd = RoundRobinDate()
+        expected = date.today()
+        result = original_rrd._get_current_date()
         assert_equal(result, expected)
 
     def test_set_option_single_value(self):
@@ -130,3 +109,4 @@ class TestRoundRobinDate():
         self.rrd.set_options(new_options)
         result = self.rrd.get_options()
         assert_equal(result, new_options)
+

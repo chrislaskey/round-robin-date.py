@@ -4,13 +4,17 @@ from datetime import date, timedelta
 
 class RoundRobinDate:
 
-    def __init__(self, custom_options=""):
-        self._set_default_options()
-        self.set_options(custom_options)
+    def __init__(self, options=""):
+        self.set_options(options)
 
-    def __str__(self):
-        "Display current options"
-        return "Hello World"
+    def set_options(self, options):
+        if not hasattr(self, "options_parser"):
+            self.options_parser = RoundRobinDateOptionsParser()
+        self.options_parser.set_options(options)
+        self.options = self.options_parser.get_options()
+
+    def get_options(self):
+        return self.options.copy()
 
     def _get_days_in_month(self, month, year=""):
         "Get days by subtracting a day from the beginning of next month"
@@ -26,18 +30,17 @@ class RoundRobinDate:
         else:
             return month + 1
 
-    def _get_previous_month(self, month):
-        # TODO: Depricated
-        if month == 1:
-            return 12
-        else:
-            return month - 1
-
     def _get_current_date(self):
         "Abstracted to a method to allow unit tests to set 'today'"
         return date.today()
 
-    def _set_default_options(self):
+class RoundRobinDateOptionsParser:
+
+    def __init__(self, custom_options=""):
+        self.set_default_options()
+        self.set_options(custom_options)
+
+    def set_default_options(self):
         self.options = {}
         default_options = self._get_default_options()
         self.set_options(default_options)
@@ -99,4 +102,4 @@ class RoundRobinDate:
                 self.options[key] = int(value)
 
     def get_options(self):
-        return self.options
+        return self.options.copy()
