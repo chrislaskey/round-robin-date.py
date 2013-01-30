@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 
 class RoundRobinDate:
 
-    def __init__(self, options=""):
-        self.options = self._get_default_options()
-        # self.set_options(options)
+    def __init__(self, custom_options=""):
+        self._set_default_options()
+        self.set_options(custom_options)
 
     def __str__(self):
         "Display current options"
@@ -34,52 +34,69 @@ class RoundRobinDate:
             return month - 1
 
     def _get_current_date(self):
-        "Abstracted current date to aid testing by inheritence"
-        return date.now()
+        "Abstracted to a method to allow unit tests to set 'today'"
+        return date.today()
 
-    # def _parse_datetime(self, options):
-    #     pass
-
-    # def generate(self, start_date=""):
-    #     pass
-
+    def _set_default_options(self):
+        self.options = {}
+        default_options = self._get_default_options()
+        self.set_options(default_options)
         
     def _get_default_options(self):
         default_options = {
             "start_date": date.today(),
             "days_to_retain": 7,
             "weeks_to_retain": 3,
-            "months_to_retain": '6',
+            "months_to_retain": 6,
             "years_to_retain": 20
         }
         return default_options
 
-    # def set_options(self, new_options):
-    #     """
-    #     Update options, accepts either complete or partial options dictionary.
-    #     If partial the new options are merged with current options dictionary.
-    #     """
-    #     if new_options:
-    #         self.options.update(new_options)
-    #         self._parse_options()
+    def set_options(self, new_options):
+        """
+        Update options, with either a complete or partial options dictionary.
+        If partial the new options are merged with current options dictionary.
+        """
+        if new_options:
+            self.options.update(new_options)
+            self._parse_options()
 
-    # def _parse_options(self):
-    #     self._parse_start_date_options()
-    #     self._parse_retain_options()
+    def _parse_options(self):
+        self._parse_start_date_options()
+        self._parse_retain_options()
 
-    # def _parse_start_date_options(self):
-    #     start_date = self.options.get("start_date")
-    #     if not start_date:
-    #         raise Exception("Invalid option for 'start_date': cannot be empty")
-    #     if not isinstance(start_date, date):
-    #         start_date_as_date = date(start_date)
-    #         self.options["start_date"] = start_date_as_date
+    def _parse_start_date_options(self):
+        start_date = self.options.get("start_date")
+        if not start_date:
+            raise Exception("Invalid option for 'start_date': cannot be empty")
+        if not isinstance(start_date, date):
+            parsed_date = self._parse_string_date(start_date)
+            self.options["start_date"] = date(
+                parsed_date.get("year"),
+                parsed_date.get("month"),
+                parsed_date.get("day"),
+            )
 
-    # def _parse_retain_options(self):
-    #     key_prefixes = ["days", "weeks", "months", "years"]
-    #     keys = [ x + "_to_retain" for x in key_prefixes ]
-    #     updated_values = { key: int(value) for (key, value) in self.options.iteritems() if value in keys }
-    #     self.options.update(updated_values)
+    def _parse_string_date(self, input):
+        if len(input) < 8:
+            raise Exception("Invalid string date: must be in YYYYMMDD format")
+        date_pieces = {
+            "year": int(input[0:4]),
+            "month": int(input[4:6]),
+            "day": int(input[6:8])
+        }
+        return date_pieces
+
+    def _parse_retain_options(self):
+        options_with_numeric_values = [
+            "days_to_retain",
+            "weeks_to_retain",
+            "months_to_retain",
+            "years_to_retain"
+        ]
+        for key, value in self.options.iteritems():
+            if key in options_with_numeric_values:
+                self.options[key] = int(value)
 
     def get_options(self):
         return self.options
