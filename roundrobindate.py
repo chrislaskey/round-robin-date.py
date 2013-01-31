@@ -3,9 +3,6 @@
 from datetime import date, timedelta
 from collections import OrderedDict
 
-# TODO: The returned dates are currently backwards. Counting from start_date
-# forward. Next step is to switch it to be backwards from start date.
-
 class RoundRobinDate:
 
     def __init__(self, options=""):
@@ -24,9 +21,17 @@ class RoundRobinDate:
         "Abstracted to a method to allow unit tests to set value of 'today'"
         return date.today()
 
-    def get_dates(self):
+    def get_dates(self, direction="past"):
+        self._parse_direction(direction)
         dates = self._generate_dates()
         return dates
+
+    def _parse_direction(self, direction):
+        allowed = ["past", "future"]
+        if direction not in allowed:
+            raise Exception("Invalid direction value: must be either 'past'\
+                            or 'future'")
+        self.direction = direction
 
     def _generate_dates(self):
         dates = OrderedDict()
@@ -57,8 +62,15 @@ class RoundRobinDate:
         return date_dict
 
     def _get_next_day(self, input_date):
-        next_day = input_date + timedelta(days=1)
+        if self._direction_is_past():
+            interval = timedelta(days=-1)
+        else:
+            interval = timedelta(days=1)
+        next_day = input_date + interval
         return next_day
+
+    def _direction_is_past(self):
+        return self.direction == "past"
 
     def _generate_week_dates(self):
         dates = {}
@@ -71,7 +83,11 @@ class RoundRobinDate:
         return dates
 
     def _get_next_week(self, input_date):
-        next_week = input_date + timedelta(weeks=1)
+        if self._direction_is_past():
+            interval = timedelta(weeks=-1)
+        else:
+            interval = timedelta(weeks=1)
+        next_week = input_date + interval
         return next_week
 
     def _generate_month_dates(self):
@@ -88,13 +104,20 @@ class RoundRobinDate:
         day = input_date.day
         month = input_date.month
         year = input_date.year
+        if self._direction_is_past():
+            if month == 1:
+                month = 12
+                year = year - 1
+            else:
+                month = month - 1
+        else:
+            if month == 12:
+                month = 1
+                year = year + 1
+            else:
+                month = month + 1
         if day > 28:
             day = 28
-        if month == 12:
-            month = 1
-            year = year + 1
-        else:
-            month = month + 1
         next_month = date(year, month, day)
         return next_month
 
@@ -114,13 +137,19 @@ class RoundRobinDate:
         year = input_date.year
         if day == 29 and month == 2:
             day = 28
-        next_year = date(year + 1, month, day)
+        if self._direction_is_past():
+            year = year - 1
+        else:
+            year = year + 1
+        next_year = date(year, month, day)
         return next_year
 
-    def get_dates_as_strings(self):
-        dates = self.get_dates()
+    def get_dates_as_strings(self, direction="past"):
+        dates = self.get_dates(direction)
         dates_list = list(dates)
         dates_list.sort()
+        if self._direction_is_past():
+            dates_list.sort(reverse=True)
         return dates_list
 
 class RoundRobinDateOptionsParser:
