@@ -28,19 +28,82 @@ class TestRoundRobinDateOptionsParser():
             "Ensure other option values are not accidentally changed too"
         )
 
-    def test_set_option_string_start_date(self):
-        "Test setting start date as string"
-        new_start_date_value = {"start_date": "2010-11-05"}
-        expected_parsed_result = date(2010, 11, 05)
-        self.options_parser.set_options(new_start_date_value)
+    def test_set_option_current_date_object(self):
+        "Test setting current date with date object"
+        current_date = date(2010, 11, 05)
+        new_option = {"current_date": current_date}
+        self.options_parser.set_options(new_option)
         returned_options = self.options_parser.get_options()
-        returned_start_date_value = returned_options.get("start_date")
-        assert_equal(returned_start_date_value, expected_parsed_result)
+        option_value = returned_options.get("current_date")
+        assert_equal(option_value, current_date)
+
+    def test_set_option_current_date_string(self):
+        "Test setting current date with date strings"
+        current_date_string = "2010-11-05"
+        expected = date(2010, 11, 05)
+        new_options = {"current_date": current_date_string}
+        self.options_parser.set_options(new_options)
+        returned_options = self.options_parser.get_options()
+        option_value = returned_options.get("current_date")
+        assert_equal(option_value, expected)
+
+        current_date_string = "2010.11.05"
+        expected = date(2010, 11, 05)
+        new_options = {"current_date": current_date_string}
+        self.options_parser.set_options(new_options)
+        returned_options = self.options_parser.get_options()
+        option_value = returned_options.get("current_date")
+        assert_equal(option_value, expected)
+
+    def test_set_option_anchor_date(self):
+        "Test setting anchor date with date object and date string"
+        anchor_date = date(2010, 11, 05)
+        new_option = {"anchor_date": anchor_date}
+        self.options_parser.set_options(new_option)
+        returned_options = self.options_parser.get_options()
+        option_value = returned_options.get("anchor_date")
+        assert_equal(option_value, anchor_date)
+
+        anchor_date_string = "2010-11-05"
+        expected = date(2010, 11, 05)
+        new_option = {"anchor_date": anchor_date_string}
+        self.options_parser.set_options(new_option)
+        returned_options = self.options_parser.get_options()
+        option_value = returned_options.get("anchor_date")
+        assert_equal(option_value, expected)
+
+    def test_set_option_anchor_date_and_confirm_backup_days_set(self):
+        "Set new anchor date and confirm backup days are set based off of it"
+        anchor_date = date(2010, 11, 05)
+        new_option = {"anchor_date": anchor_date}
+        day_of_week = anchor_date.isoweekday()
+        day_of_month = anchor_date.day
+        month_of_year = anchor_date.month
+        self.options_parser.set_options(new_option)
+        returned = self.options_parser.get_options()
+        assert_equal(returned.get("backup_day_of_week"), day_of_week)
+        assert_equal(returned.get("backup_day_of_month"), day_of_month)
+        assert_equal(returned.get("backup_month_of_year"), month_of_year)
+
+    def test_set_option_anchor_date_late_in_month_and_confirm_backup_days_set(self):
+        """
+        Notice backup day of the month can't be higher to 28, will auto adjust.
+        """
+        anchor_date = date(2010, 11, 30)
+        new_option = {"anchor_date": anchor_date}
+        day_of_month = 28
+        self.options_parser.set_options(new_option)
+        returned = self.options_parser.get_options()
+        assert_equal(returned.get("backup_day_of_month"), day_of_month)
 
     def test_set_option_all_values(self):
         "Test setting all options"
         new_options = {
-            "start_date": date.today(),
+            "current_date": date(2011, 1, 1),
+            "anchor_date": None,
+            "backup_day_of_week": 0,
+            "backup_day_of_month": 1,
+            "backup_month_of_year": 1,
             "days_to_retain": 8,
             "weeks_to_retain": 4,
             "months_to_retain": 7,

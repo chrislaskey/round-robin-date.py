@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from datetime import date, timedelta
-from collections import OrderedDict
 
 class RoundRobinDate:
 
@@ -17,43 +16,23 @@ class RoundRobinDate:
     def get_options(self):
         return self.options.copy()
 
-    def _get_current_date(self):
-        "Abstracted to a method to allow unit tests to set value of 'today'"
-        return date.today()
-
-    def get_dates(self, direction="past"):
-        self._parse_direction(direction)
+    def get_dates(self):
         dates = self._generate_dates()
         return dates
 
-    def _parse_direction(self, direction):
-        allowed = ["past", "future"]
-        if direction not in allowed:
-            raise Exception("Invalid direction value: must be either 'past'\
-                            or 'future'")
-        self.direction = direction
-
     def _generate_dates(self):
-        dates = OrderedDict()
+        dates = {}
+        dates.update(self._generate_todays_date())
         dates.update(self._generate_day_dates())
         dates.update(self._generate_week_dates())
         dates.update(self._generate_month_dates())
         dates.update(self._generate_year_dates())
         return dates
 
-    def _generate_day_dates(self):
-        dates = {}
-        current_date = self.options.get("start_date")
-        number_to_generate = self.options.get("days_to_retain")
-        if number_to_generate > 0: # Include start_date
-            date_dict = self._generate_date_dict(current_date)
-            dates.update(date_dict)
-            number_to_generate = number_to_generate - 1
-        for i in xrange(number_to_generate):
-            current_date = self._get_next_day(current_date)
-            date_dict = self._generate_date_dict(current_date)
-            dates.update(date_dict)
-        return dates
+    def _generate_todays_date(self):
+        current_date = self.options["current_date"]
+        current_date_dict = self._generate_date_dict(current_date)
+        return current_date_dict
 
     def _generate_date_dict(self, input_date):
         date_key = input_date.isoformat()
@@ -61,95 +40,105 @@ class RoundRobinDate:
         date_dict = {date_key: date_value}
         return date_dict
 
-    def _get_next_day(self, input_date):
-        if self._direction_is_past():
-            interval = timedelta(days=-1)
-        else:
-            interval = timedelta(days=1)
-        next_day = input_date + interval
-        return next_day
+    def _generate_day_dates(self):
+        dates = {}
+        current_date = self.options["current_date"]
+        number_to_generate = self.options.get("days_to_retain")
+        for i in xrange(number_to_generate):
+            current_date = self._get_previous_day(current_date)
+            date_dict = self._generate_date_dict(current_date)
+            dates.update(date_dict)
+        return dates
 
-    def _direction_is_past(self):
-        return self.direction == "past"
+    def _get_previous_day(self, input_date):
+        interval = timedelta(days=-1)
+        previous_day = input_date + interval
+        return previous_day
 
     def _generate_week_dates(self):
         dates = {}
-        current_date = self.options.get("start_date")
+        current_date = self.options["current_date"]
+        current_week_date = self._get_first_week(current_date)
         number_to_generate = self.options.get("weeks_to_retain")
         for i in xrange(number_to_generate):
-            current_date = self._get_next_week(current_date)
-            date_dict = self._generate_date_dict(current_date)
+            date_dict = self._generate_date_dict(current_week_date)
             dates.update(date_dict)
+            current_week_date = self._get_previous_week(current_week_date)
         return dates
 
-    def _get_next_week(self, input_date):
-        if self._direction_is_past():
-            interval = timedelta(weeks=-1)
+    def _get_first_week(self, input_date):
+        """
+        Picks a day of the week based on the backup_day_of_week value.
+        Excludes the current day.
+        """
+        days_in_week = 7
+        backup_day_of_week = self.options.get("backup_day_of_week")
+        current_day_of_week = input_date.isoweekday()
+        if current_day_of_week > backup_day_of_week:
+            days_back = current_day_of_week - backup_day_of_week
         else:
-            interval = timedelta(weeks=1)
-        next_week = input_date + interval
-        return next_week
+            days_back = (current_day_of_week + days_in_week) - backup_day_of_week
+        first_week = input_date - timedelta(days=days_back)
+        return first_week
+
+    def _get_previous_week(self, input_date):
+        interval = timedelta(weeks=-1)
+        previous_week = input_date + interval
+        return previous_week
 
     def _generate_month_dates(self):
         dates = {}
-        current_date = self.options.get("start_date")
+        current_date = self.options["current_date"]
         number_to_generate = self.options.get("months_to_retain")
         for i in xrange(number_to_generate):
-            current_date = self._get_next_month(current_date)
+            current_date = self._get_previous_month(current_date)
             date_dict = self._generate_date_dict(current_date)
             dates.update(date_dict)
         return dates
 
-    def _get_next_month(self, input_date):
+    def _get_first_month(self, input_date):
+        assert("FAILURE: Round Robin Class not complete")
+        # TODO: finish month and year date generators.
+        pass
+
+    def _get_previous_month(self, input_date):
         day = input_date.day
         month = input_date.month
         year = input_date.year
-        if self._direction_is_past():
-            if month == 1:
-                month = 12
-                year = year - 1
-            else:
-                month = month - 1
+        if month == 1:
+            month = 12
+            year = year - 1
         else:
-            if month == 12:
-                month = 1
-                year = year + 1
-            else:
-                month = month + 1
+            month = month - 1
         if day > 28:
             day = 28
-        next_month = date(year, month, day)
-        return next_month
+        previous_month = date(year, month, day)
+        return previous_month
 
     def _generate_year_dates(self):
         dates = {}
-        current_date = self.options.get("start_date")
+        current_date = self.options["current_date"]
         number_to_generate = self.options.get("years_to_retain")
         for i in xrange(number_to_generate):
-            current_date = self._get_next_year(current_date)
+            current_date = self._get_previous_year(current_date)
             date_dict = self._generate_date_dict(current_date)
             dates.update(date_dict)
         return dates
 
-    def _get_next_year(self, input_date):
+    def _get_previous_year(self, input_date):
         day = input_date.day
         month = input_date.month
         year = input_date.year
         if day == 29 and month == 2:
             day = 28
-        if self._direction_is_past():
-            year = year - 1
-        else:
-            year = year + 1
-        next_year = date(year, month, day)
-        return next_year
+        year = year - 1
+        previous_year = date(year, month, day)
+        return previous_year
 
-    def get_dates_as_strings(self, direction="past"):
-        dates = self.get_dates(direction)
+    def get_dates_as_strings(self):
+        dates = self.get_dates()
         dates_list = list(dates)
-        dates_list.sort()
-        if self._direction_is_past():
-            dates_list.sort(reverse=True)
+        dates_list.sort(reverse=True)
         return dates_list
 
 class RoundRobinDateOptionsParser:
@@ -165,7 +154,11 @@ class RoundRobinDateOptionsParser:
 
     def _get_default_options(self):
         default_options = {
-            "start_date": date.today(),
+            "current_date": date.today(),
+            "anchor_date": None,
+            "backup_day_of_week": 0,
+            "backup_day_of_month": 1,
+            "backup_month_of_year": 1,
             "days_to_retain": 7,
             "weeks_to_retain": 3,
             "months_to_retain": 6,
@@ -183,20 +176,21 @@ class RoundRobinDateOptionsParser:
             self._parse_options()
 
     def _parse_options(self):
-        self._parse_start_date_options()
+        self._parse_current_date_options()
+        self._parse_backup_options()
         self._parse_retain_options()
 
-    def _parse_start_date_options(self):
-        start_date = self.options.get("start_date")
-        if not start_date:
-            raise Exception("Invalid option for 'start_date': cannot be empty")
-        if not isinstance(start_date, date):
-            parsed_date = self._parse_string_date(start_date)
-            self.options["start_date"] = date(
-                parsed_date.get("year"),
-                parsed_date.get("month"),
-                parsed_date.get("day"),
-            )
+    def _parse_current_date_options(self):
+        current_date = self.options.get("current_date")
+        parsed_current_date = self._parse_date(current_date)
+        self.options["current_date"] = parsed_current_date
+
+    def _parse_date(self, input):
+        if isinstance(input, date):
+            return input
+        else:
+            parsed_date = self._parse_string_date(input)
+            return parsed_date
 
     def _parse_string_date(self, input):
         if len(input) < 10:
@@ -207,7 +201,49 @@ class RoundRobinDateOptionsParser:
             "month": int(input[5:7]),
             "day": int(input[8:10])
         }
-        return date_pieces
+        parsed_date = date(
+            date_pieces.get("year"),
+            date_pieces.get("month"),
+            date_pieces.get("day"),
+        )
+        return parsed_date
+
+    def _parse_backup_options(self):
+        anchor_date = self.options.get("anchor_date")
+        if anchor_date:
+            self._parse_anchor_date()
+            self._set_backup_day_options_based_on_anchor_date()
+        else:
+            self._parse_backup_day_options()
+
+    def _parse_anchor_date(self):
+        anchor_date = self.options.get("anchor_date")
+        parsed_anchor_date = self._parse_date(anchor_date)
+        self.options["anchor_date"] = parsed_anchor_date
+
+    def _set_backup_day_options_based_on_anchor_date(self):
+        anchor_date = self.options.get("anchor_date")
+        day_of_week = anchor_date.isoweekday()
+        day_of_month = anchor_date.day
+        month_of_year = anchor_date.month
+        if day_of_month > 28:
+            day_of_month = 28
+        self.options["backup_day_of_week"] = day_of_week
+        self.options["backup_day_of_month"] = day_of_month
+        self.options["backup_month_of_year"] = month_of_year
+
+    def _parse_backup_day_options(self):
+        day_of_week = self.options.get("backup_day_of_week")
+        day_of_month = self.options.get("backup_day_of_month")
+        month_of_year = self.options.get("backup_month_of_year")
+        day_of_week = int(day_of_week)
+        day_of_month = int(day_of_month)
+        if day_of_month > 28:
+            day_of_month = 28
+        month_of_year = int(month_of_year)
+        self.options["backup_day_of_week"] = day_of_week
+        self.options["backup_day_of_month"] = day_of_month
+        self.options["backup_month_of_year"] = month_of_year
 
     def _parse_retain_options(self):
         options_with_numeric_values = [
