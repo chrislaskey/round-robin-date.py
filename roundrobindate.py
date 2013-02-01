@@ -2,6 +2,8 @@
 
 from datetime import date, timedelta
 
+# TODO: Add options test for 'backup_' options
+
 class RoundRobinDate:
 
     def __init__(self, options=""):
@@ -170,10 +172,10 @@ class RoundRobinDateOptionsParser:
             "backup_day_of_week": 0,
             "backup_day_of_month": 1,
             "backup_month_of_year": 1,
-            "days_to_retain": 7,
+            "days_to_retain": 6,
             "weeks_to_retain": 3,
             "months_to_retain": 6,
-            "years_to_retain": 20
+            "years_to_retain": 10
         }
         return default_options
 
