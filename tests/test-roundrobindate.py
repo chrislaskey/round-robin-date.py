@@ -103,7 +103,7 @@ class TestRoundRobinDate():
     def test_get_dates_with_retain_months_options(self):
         new_options = {
             "current_date": "2012-02-02",
-            "anchor_date": "2004-02-29",
+            "anchor_date": "2004-01-15",
             "days_to_retain": 0,
             "weeks_to_retain": 0,
             "months_to_retain": 6,
@@ -111,22 +111,22 @@ class TestRoundRobinDate():
         }
         self.rrd.set_options(new_options)
 
-        expected = {
-            "2012-02-02": date(2012, 2, 2),
-            "2012-01-28": date(2012, 1, 28),
-            "2011-12-28": date(2011, 12, 28),
-            "2011-11-28": date(2011, 11, 28),
-            "2011-10-28": date(2011, 10, 28),
-            "2011-09-28": date(2011, 9, 28),
-            "2011-08-28": date(2011, 8, 28)
-        }
-        result = self.rrd.get_dates()
+        expected = [
+            "2012-02-02", # Today's backup
+            "2012-01-15", # Month backup 1
+            "2011-12-15", # Month backup 2
+            "2011-11-15", # Month backup 3
+            "2011-10-15", # Month backup 4
+            "2011-09-15", # Month backup 5
+            "2011-08-15"  # Month backup 6
+        ]
+        result = self.rrd.get_dates_as_strings()
         assert_equal(result, expected)
 
     def test_get_dates_with_retain_years_options(self):
         new_options = {
             "current_date": "2012-02-01",
-            "anchor_date": "2008-02-29",
+            "anchor_date": "2008-02-28",
             "days_to_retain": 0,
             "weeks_to_retain": 0,
             "months_to_retain": 0,
@@ -134,15 +134,15 @@ class TestRoundRobinDate():
         }
         self.rrd.set_options(new_options)
 
-        expected = {
-            "2012-02-01": date(2012, 2, 1),
-            "2011-02-28": date(2011, 2, 28),
-            "2010-02-28": date(2010, 2, 28),
-            "2009-02-28": date(2009, 2, 28),
-            "2008-02-28": date(2008, 2, 28),
-            "2007-02-28": date(2007, 2, 28),
-        }
-        result = self.rrd.get_dates()
+        expected = [
+            "2012-02-01", # Today's backup
+            "2011-02-28", # Year backup 1
+            "2010-02-28", # Year backup 2
+            "2009-02-28", # Year backup 3
+            "2008-02-28", # Year backup 4
+            "2007-02-28"  # Year backup 5
+        ]
+        result = self.rrd.get_dates_as_strings()
         assert_equal(result, expected)
 
     def test_get_dates_as_strings_with_day_and_week_retain_options(self):
@@ -196,11 +196,15 @@ class TestRoundRobinDate():
         result = self.rrd.get_dates_as_strings()
         assert_equal(result, expected)
 
-    def test_get_dates_with_all_options_with_collapsed_results(self):
-        "Show how dates can collapse in. Dates are inward looking."
+    def test_get_dates_with_all_options_and_illustrate_collapsed_results(self):
+        """
+        Be aware backup intervals are never longer than their interval.
+        Notice how the 1 years_to_retain value switches to a recent value after
+        365+1 days.
+        """
         new_options = {
-            "current_date": "2012-02-29",
-            "anchor_date": "2012-02-29",
+            "current_date": "2012-11-15", # 366 days after anchor date
+            "anchor_date": "2011-11-14",
             "days_to_retain": 1,
             "weeks_to_retain": 1,
             "months_to_retain": 1,
@@ -208,12 +212,39 @@ class TestRoundRobinDate():
         }
         self.rrd.set_options(new_options)
 
-        expected = {
-            "2012-02-29": date(2012, 2, 29),
-            "2012-02-28": date(2012, 2, 28),
-            "2012-02-22": date(2012, 2, 22),
+        expected = [
+            "2012-11-15", # Today's backup
+            "2012-11-14", # Year backup 1 && Month backup && Day backup 1
+            "2012-11-12", # Weekly backup 1
+        ]
+        result = self.rrd.get_dates_as_strings()
+        assert_equal(result, expected)
+
+    def test_get_dates_with_all_options_and_illustrate_late_in_month_auto_corrected_dates(self):
+        """
+        When auto correct backup dates is on and a date is given where 
+        backup_day_of_month > 28, the 1st day of the next month is used for
+        the backup_day_of_month and backup_month_of_year values instead.
+        """
+        new_options = {
+            "current_date": "2012-01-30",
+            "anchor_date": "2012-01-30",
+            "auto_correct_backup_dates": True,
+            "days_to_retain": 1,
+            "weeks_to_retain": 1,
+            "months_to_retain": 1,
+            "years_to_retain": 1
         }
-        result = self.rrd.get_dates()
+        self.rrd.set_options(new_options)
+
+        expected = [
+            "2012-01-30", # Today's backup
+            "2012-01-29", # Day backup 1
+            "2012-01-23", # Week backup 1
+            "2012-01-01", # Month backup 1
+            "2011-02-01", # Year backup 1
+        ]
+        result = self.rrd.get_dates_as_strings()
         assert_equal(result, expected)
 
     def test_get_dates_with_default_options(self):
@@ -230,8 +261,8 @@ class TestRoundRobinDate():
             '2012-02-25',
             '2012-02-24',
             '2012-02-23',
-            '2012-02-19',
-            '2012-02-12',
+            '2012-02-20',
+            '2012-02-13',
             '2012-02-01',
             '2012-01-01',
             '2011-12-01',

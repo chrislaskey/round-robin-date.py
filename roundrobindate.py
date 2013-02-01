@@ -2,8 +2,6 @@
 
 from datetime import date, timedelta
 
-# TODO: Add options test for 'backup_' options
-
 class RoundRobinDate:
 
     def __init__(self, options=""):
@@ -136,7 +134,7 @@ class RoundRobinDate:
         month = self.options["backup_month_of_year"]
         year = input_date.year
         current_year = date(year, month, day)
-        if current_year > input_date:
+        if current_year >= input_date:
             current_year = self._get_previous_year(current_year)
         return current_year
 
@@ -168,8 +166,9 @@ class RoundRobinDateOptionsParser:
     def _get_default_options(self):
         default_options = {
             "current_date": date.today(),
+            "auto_correct_backup_dates": True,
             "anchor_date": None,
-            "backup_day_of_week": 0,
+            "backup_day_of_week": 1,
             "backup_day_of_month": 1,
             "backup_month_of_year": 1,
             "days_to_retain": 6,
@@ -207,8 +206,8 @@ class RoundRobinDateOptionsParser:
 
     def _parse_string_date(self, input):
         if len(input) < 10:
-            raise Exception("Invalid string date: must be in ISO 8601 format,\
-                            'YYYY-MM-DD'")
+            raise Exception("Invalid string date: must be in ISO 8601 format,"
+                            "'YYYY-MM-DD'")
         date_pieces = {
             "year": int(input[0:4]),
             "month": int(input[5:7]),
@@ -239,24 +238,66 @@ class RoundRobinDateOptionsParser:
         day_of_week = anchor_date.isoweekday()
         day_of_month = anchor_date.day
         month_of_year = anchor_date.month
-        if day_of_month > 28:
-            day_of_month = 28
+        day_of_month, month_of_year = self._verify_day_of_month(day_of_month,\
+                                                                month_of_year)
         self.options["backup_day_of_week"] = day_of_week
         self.options["backup_day_of_month"] = day_of_month
         self.options["backup_month_of_year"] = month_of_year
 
+    def _get_next_month(self, month):
+        if month == 12:
+            month = 1
+        else:
+            month = month + 1
+        return month
+
     def _parse_backup_day_options(self):
-        day_of_week = self.options.get("backup_day_of_week")
-        day_of_month = self.options.get("backup_day_of_month")
-        month_of_year = self.options.get("backup_month_of_year")
-        day_of_week = int(day_of_week)
-        day_of_month = int(day_of_month)
-        if day_of_month > 28:
-            day_of_month = 28
-        month_of_year = int(month_of_year)
+        day_of_week = self._parse_option_day_of_week()
+        day_of_month = self._parse_option_day_of_month()
+        month_of_year = self._parse_option_month_of_year()
+        day_of_month, month_of_year = self._verify_day_of_month(day_of_month,\
+                                                                month_of_year)
         self.options["backup_day_of_week"] = day_of_week
         self.options["backup_day_of_month"] = day_of_month
         self.options["backup_month_of_year"] = month_of_year
+
+    def _parse_option_day_of_week(self):
+        day_of_week = self.options.get("backup_day_of_week")
+        day_of_week = int(day_of_week)
+        if day_of_week > 7 or day_of_week < 1:
+            raise Exception("Value for the option 'day_of_week' must be an "
+                            "integer between 1-7 (Monday-Saturday). "
+                            "Given '{0}'".format(day_of_week))
+        return day_of_week
+
+    def _parse_option_day_of_month(self):
+        day_of_month = self.options.get("backup_day_of_month")
+        day_of_month = int(day_of_month)
+        if day_of_month < 1 or day_of_month > 31:
+            raise Exception("Value for the option 'day_of_month' must be an "
+                            "integer between 1-31."
+                            "Given '{0}'".format(day_of_month))
+        return day_of_month
+
+    def _parse_option_month_of_year(self):
+        month_of_year = self.options.get("backup_month_of_year")
+        month_of_year = int(month_of_year)
+        if month_of_year < 1 or month_of_year > 12:
+            raise Exception("Value for the option 'month_of_year' must be an "
+                            "integer between 1-12."
+                            "Given '{0}'".format(month_of_year))
+        return month_of_year
+
+    def _verify_day_of_month(self, day_of_month, month_of_year):
+        if day_of_month > 28:
+            if not self.options.get("auto_correct_backup_dates"):
+                raise Exception("Value for the option 'anchor_date' must not "
+                                "return a day of the month greater than 28. "
+                                "Given '{0}'".format(day_of_month))
+            else:
+                day_of_month = 1
+                month_of_year = self._get_next_month(month_of_year)
+        return (day_of_month, month_of_year)
 
     def _parse_retain_options(self):
         options_with_numeric_values = [
