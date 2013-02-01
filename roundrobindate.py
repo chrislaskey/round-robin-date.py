@@ -89,17 +89,22 @@ class RoundRobinDate:
     def _generate_month_dates(self):
         dates = {}
         current_date = self.options["current_date"]
+        current_month_date = self._get_first_month(current_date)
         number_to_generate = self.options.get("months_to_retain")
         for i in xrange(number_to_generate):
-            current_date = self._get_previous_month(current_date)
-            date_dict = self._generate_date_dict(current_date)
+            date_dict = self._generate_date_dict(current_month_date)
             dates.update(date_dict)
+            current_month_date = self._get_previous_month(current_month_date)
         return dates
 
     def _get_first_month(self, input_date):
-        assert("FAILURE: Round Robin Class not complete")
-        # TODO: finish month and year date generators.
-        pass
+        day = self.options["backup_day_of_month"]
+        month = input_date.month
+        year = input_date.year
+        current_month = date(year, month, day)
+        if current_month >= input_date:
+            current_month = self._get_previous_month(current_month)
+        return current_month
 
     def _get_previous_month(self, input_date):
         day = input_date.day
@@ -110,27 +115,33 @@ class RoundRobinDate:
             year = year - 1
         else:
             month = month - 1
-        if day > 28:
-            day = 28
         previous_month = date(year, month, day)
         return previous_month
 
     def _generate_year_dates(self):
         dates = {}
         current_date = self.options["current_date"]
+        current_year_date = self._get_first_year(current_date)
         number_to_generate = self.options.get("years_to_retain")
         for i in xrange(number_to_generate):
-            current_date = self._get_previous_year(current_date)
-            date_dict = self._generate_date_dict(current_date)
+            date_dict = self._generate_date_dict(current_year_date)
             dates.update(date_dict)
+            current_year_date = self._get_previous_year(current_year_date)
         return dates
+
+    def _get_first_year(self, input_date):
+        day = self.options["backup_day_of_month"]
+        month = self.options["backup_month_of_year"]
+        year = input_date.year
+        current_year = date(year, month, day)
+        if current_year > input_date:
+            current_year = self._get_previous_year(current_year)
+        return current_year
 
     def _get_previous_year(self, input_date):
         day = input_date.day
         month = input_date.month
         year = input_date.year
-        if day == 29 and month == 2:
-            day = 28
         year = year - 1
         previous_year = date(year, month, day)
         return previous_year
