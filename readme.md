@@ -1,7 +1,7 @@
 About
 ================================================================================
 
-Version 1.0.4
+Version 1.0.6
 
 A python library for calculating round-robin database style dates.
 
@@ -28,6 +28,45 @@ carefully before setting the ```*_to_retain``` options very carefully.
 When in doubt test output using the ```current_date``` option. For more
 examples see the unit tests, there are a few included for illustration,
 including some trickier edge-cases.
+
+A more common example:
+
+    options = {
+        "current_date": "2010-10-20",
+        "anchor_date": "2010-10-20",
+        "days_to_retain": 6,
+        "weeks_to_retain": 4,
+        "months_to_retain": 6,
+        "years_to_retain": 2
+    }
+    rrd = RoundRobinDate(options)
+    dates = rrd.get_dates()
+
+The value of dates is:
+
+    [
+        "2010-10-20", # Today's date
+        "2010-10-19", # Retain day 1
+        "2010-10-18", # Retain day 2
+        "2010-10-17", # Retain day 3
+        "2010-10-16", # Retain day 4
+        "2010-10-15", # Retain day 5
+        "2010-10-14", # Retain day 6
+        "2010-10-13", # Retain week 1
+        "2010-10-06", # Retain week 2
+        "2010-09-29", # Retain week 3
+        "2010-09-22", # Retain week 4
+        "2010-09-20", # Retain month 1
+        "2010-08-20", # Retain month 2
+        "2010-07-20", # Retain month 3
+        "2010-06-20", # Retain month 4
+        "2010-05-20", # Retain month 5
+        "2010-04-20", # Retain month 6
+        "2009-10-20", # Retain year 1
+        "2008-10-20", # Retain year 2
+    ]
+
+See the unit tests for more examples, including illustrations of some of the trickier edge cases when dealing with calendar dates.
 
 Quickstart
 ----------
