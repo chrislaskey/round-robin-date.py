@@ -174,7 +174,7 @@ The value of dates is (added comments for clarity):
 
 See the unit tests for more examples, including illustrations of some of the trickier edge cases when dealing with calendar dates.
 
-Use cases: Implementing a backup system
+Use case: Implementing a backup system
 ----------------------------
 
 The most common application of a round robin date library is to implement
