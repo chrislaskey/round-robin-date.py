@@ -1,7 +1,7 @@
 About
 ================================================================================
 
-Version 0.9.0
+Version 1.0.1
 
 A python library for calculating round-robin database style dates.
 
@@ -41,6 +41,22 @@ all ```*_to_retain``` options from what may be expected.
 Documentation
 =============
 
+Methods
+-------
+
+```set_options()``` (dict, {option_name: option_value}) New values will always
+trump old values. See Options section for available options and acceptable
+values.
+
+```get_options()``` () Returns a dictionary where each key is the option name,
+and each value the current option value.
+
+```get_dates()``` () Returns a dictionary where each key is an ISO 8601 format
+compatible string, 'YYYY-MM-DD', and the value is a datetime.date object.
+
+```get_dates_as_strings()``` () Returns a list of dates in a ISO 8601 format
+compatible string, 'YYYY-MM-DD'.
+
 Options
 -------
 
@@ -76,9 +92,9 @@ a ```anchor_date``` option value.
 ```backup_day_of_week``` (int, 1-7 for Monday-Sunday) By default this is set to
 1.
 
-```backup_day_of_month``` (int, 1-31*) By default this is set to 1. *If a value
-> 28 requires ```auto_correct_backup_dates``` to be set to True, otherwise will
-raise an error.
+```backup_day_of_month``` (int, 1-31*) By default this is set to 1. *If a 
+value > 28 requires ```auto_correct_backup_dates``` to be set to True, otherwise
+will raise an error.
 
 ```backup_month_of_year``` (int, 1-12) By default this is set to 1.
 
@@ -96,21 +112,8 @@ intervals. Also useful in automatic backup scripts where the initial backup
 date is dynamic and may fall on a day of the month > 28, allowing immediate
 backups without human intervention.
 
-Methods
--------
-
-```set_options()``` (dict, {option_name: option_value}) New values will always
-trump old values. See Options section for available options and acceptable
-values.
-
-```get_options()``` () Returns a dictionary where each key is the option name,
-and each value the current option value.
-
-```get_dates()``` () Returns a dictionary where each key is an ISO 8601 format
-compatible string, 'YYYY-MM-DD', and the value is a datetime.date object.
-
-```get_dates_as_strings()``` () Returns a list of dates in a ISO 8601 format
-compatible string, 'YYYY-MM-DD'.
+Use cases
+=========
 
 Implementing a backup system
 ----------------------------
