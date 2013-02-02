@@ -40,9 +40,9 @@ A more common example:
         "years_to_retain": 2
     }
     rrd = RoundRobinDate(options)
-    dates = rrd.get_dates()
+    dates = rrd.get_dates_as_strings()
 
-The value of dates is:
+The value of dates is (added comments for clarity):
 
     [
         "2010-10-20", # Today's date
