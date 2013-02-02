@@ -29,7 +29,7 @@ When in doubt test output using the ```current_date``` option. For more
 examples see the unit tests, there are a few included for illustration,
 including some trickier edge-cases.
 
-**Note** This tool provides a stable set of _inclusive_ backup intervals, meaning
+**Note** this tool provides a stable set of _inclusive_ backup intervals, meaning
 a 364 day old backup may be retained as the 1 year backup date, but a 367 day
 will not. At minimum set n+1 for all ```*_to_retain``` options to hedge for
 unforeseen edge cases to prevent data loss. Ideally, test before implementing. 
@@ -174,10 +174,7 @@ The value of dates is (added comments for clarity):
 
 See the unit tests for more examples, including illustrations of some of the trickier edge cases when dealing with calendar dates.
 
-Use cases
-=========
-
-Implementing a backup system
+Use cases: Implementing a backup system
 ----------------------------
 
 The most common application of a round robin date library is to implement
