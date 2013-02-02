@@ -196,6 +196,42 @@ class TestRoundRobinDate():
         result = self.rrd.get_dates_as_strings()
         assert_equal(result, expected)
 
+    def test_get_dates_with_generic_options(self):
+        "Illustrates generic options with no strange edge cases."
+        new_options = {
+            "current_date": "2010-10-20",
+            "anchor_date": "2010-10-20",
+            "days_to_retain": 6,
+            "weeks_to_retain": 4,
+            "months_to_retain": 6,
+            "years_to_retain": 2
+        }
+        self.rrd.set_options(new_options)
+
+        expected = [
+            "2010-10-20", # Today's date
+            "2010-10-19", # Retain day 1
+            "2010-10-18", # Retain day 2
+            "2010-10-17", # Retain day 3
+            "2010-10-16", # Retain day 4
+            "2010-10-15", # Retain day 5
+            "2010-10-14", # Retain day 6
+            "2010-10-13", # Retain week 1
+            "2010-10-06", # Retain week 2
+            "2010-09-29", # Retain week 3
+            "2010-09-22", # Retain week 4
+            "2010-09-20", # Retain month 1
+            "2010-08-20", # Retain month 2
+            "2010-07-20", # Retain month 3
+            "2010-06-20", # Retain month 4
+            "2010-05-20", # Retain month 5
+            "2010-04-20", # Retain month 6
+            "2009-10-20", # Retain year 1
+            "2008-10-20", # Retain year 2
+        ]
+        result = self.rrd.get_dates_as_strings()
+        assert_equal(result, expected)
+
     def test_get_dates_with_all_options_and_illustrate_collapsed_results(self):
         """
         Be aware backup intervals are never longer than their interval.
