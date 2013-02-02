@@ -44,22 +44,22 @@ Documentation
 Methods
 -------
 
-```set_options()``` (dict, {option_name: option_value})
+```set_options()``` (dict: {option_name: option_value})
 
 New values will always trump old values. See Options section for available
 options and acceptable values.
 
-```get_options()``` ()
+```get_options()``` 
 
 Returns a dictionary where each key is the option name, and each value the
 current option value.
 
-```get_dates()``` ()
+```get_dates()``` 
 
 Returns a dictionary where each key is an ISO 8601 format compatible string,
 'YYYY-MM-DD', and the value is a datetime.date object.
 
-```get_dates_as_strings()``` ()
+```get_dates_as_strings()``` 
 
 Returns a list of dates in a ISO 8601 format compatible string, 'YYYY-MM-DD'.
 
