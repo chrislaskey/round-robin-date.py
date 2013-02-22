@@ -28,6 +28,20 @@ class TestRoundRobinDate():
             "Ensure other option values are not accidentally changed too"
         )
 
+    def test_get_today(self):
+        new_options = {
+            "current_date": "2011-01-01",
+            "days_to_retain": 0,
+            "weeks_to_retain": 0,
+            "months_to_retain": 0,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = "2011-01-01"
+        result = self.rrd.get_today()
+        assert_equal(result, expected)
+
     def test_get_dates_with_no_retain_options(self):
         "Always includes the current day"
         new_options = {

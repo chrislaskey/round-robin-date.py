@@ -19,6 +19,16 @@ class RoundRobinDate:
     def get_dates(self):
         dates = self._generate_dates()
         return dates
+    
+    def get_today(self):
+        date_dict = self._generate_todays_date()
+        date_string = date_dict.keys()[0]
+        return date_string
+
+    def _generate_todays_date(self):
+        current_date = self.options["current_date"]
+        current_date_dict = self._generate_date_dict(current_date)
+        return current_date_dict
 
     def _generate_dates(self):
         dates = {}
@@ -28,11 +38,6 @@ class RoundRobinDate:
         dates.update(self._generate_month_dates())
         dates.update(self._generate_year_dates())
         return dates
-
-    def _generate_todays_date(self):
-        current_date = self.options["current_date"]
-        current_date_dict = self._generate_date_dict(current_date)
-        return current_date_dict
 
     def _generate_date_dict(self, input_date):
         date_key = input_date.isoformat()
