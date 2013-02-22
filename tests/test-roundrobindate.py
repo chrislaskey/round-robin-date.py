@@ -205,10 +205,40 @@ class TestRoundRobinDate():
             "2011-12-11",
             "2011-12-04",
             "2011-12-01",
-            "2011-11-27",
+            "2011-11-27"
         ]
         result = self.rrd.get_dates_as_strings()
         assert_equal(result, expected)
+
+    def test_get_dates_as_strings_with_very_old_anchor_date(self):
+        """
+        Illustrate the anchor date is only used as reference, and is not
+        included in returned dates by default. This is consistent with
+        the library implementation, but important behavior to highlight
+        for scripts consuming the library.
+        """
+        new_options = {
+            "current_date": "2012-01-01",
+            "anchor_date": "1980-01-01",
+            "days_to_retain": 0,
+            "weeks_to_retain": 5,
+            "months_to_retain": 1,
+            "years_to_retain": 0
+        }
+        self.rrd.set_options(new_options)
+
+        expected = [
+            "2012-01-01",
+            "2011-12-27",
+            "2011-12-20",
+            "2011-12-13",
+            "2011-12-06",
+            "2011-12-01",
+            "2011-11-29"
+        ]
+        result = self.rrd.get_dates_as_strings()
+        assert_equal(result, expected)
+
 
     def test_get_dates_with_generic_options(self):
         "Illustrates generic options with no strange edge cases."
