@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""
+RoundRobinDate library
+
+See https://github.com/chrislaskey/round-robin-date.py for full documentation,
+including unit tests.
+"""
+
 from datetime import date, timedelta
 
 class RoundRobinDate:
