@@ -1,7 +1,7 @@
 About
 ================================================================================
 
-Version 1.0.7
+Version 1.1.0
 
 A python library for calculating round-robin database style dates.
 
