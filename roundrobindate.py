@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
-"""
-RoundRobinDate library
-
-See https://github.com/chrislaskey/round-robin-date.py for full documentation,
-including unit tests.
-"""
-
 from datetime import date, timedelta
 
+
 class RoundRobinDate:
+
+    """
+    RoundRobinDate library
+
+    See https://github.com/chrislaskey/round-robin-date.py for full
+    documentation, including unit tests.
+    """
 
     def __init__(self, options=""):
         self.set_options(options)
@@ -22,10 +23,6 @@ class RoundRobinDate:
 
     def get_options(self):
         return self.options.copy()
-
-    def get_dates(self):
-        dates = self._generate_dates()
-        return dates
     
     def get_today(self):
         date_dict = self._generate_todays_date()
@@ -37,6 +34,16 @@ class RoundRobinDate:
         current_date_dict = self._generate_date_dict(current_date)
         return current_date_dict
 
+    def _generate_date_dict(self, input_date):
+        date_key = input_date.isoformat()
+        date_value = input_date
+        date_dict = {date_key: date_value}
+        return date_dict
+
+    def get_dates(self):
+        dates = self._generate_dates()
+        return dates
+
     def _generate_dates(self):
         dates = {}
         dates.update(self._generate_todays_date())
@@ -45,12 +52,6 @@ class RoundRobinDate:
         dates.update(self._generate_month_dates())
         dates.update(self._generate_year_dates())
         return dates
-
-    def _generate_date_dict(self, input_date):
-        date_key = input_date.isoformat()
-        date_value = input_date
-        date_dict = {date_key: date_value}
-        return date_dict
 
     def _generate_day_dates(self):
         dates = {}
@@ -63,8 +64,8 @@ class RoundRobinDate:
         return dates
 
     def _get_previous_day(self, input_date):
-        interval = timedelta(days=-1)
-        previous_day = input_date + interval
+        interval = timedelta(days=1)
+        previous_day = input_date - interval
         return previous_day
 
     def _generate_week_dates(self):
@@ -94,8 +95,8 @@ class RoundRobinDate:
         return first_week
 
     def _get_previous_week(self, input_date):
-        interval = timedelta(weeks=-1)
-        previous_week = input_date + interval
+        interval = timedelta(weeks=1)
+        previous_week = input_date - interval
         return previous_week
 
     def _generate_month_dates(self):
@@ -164,6 +165,7 @@ class RoundRobinDate:
         dates_list.sort(reverse=True)
         return dates_list
 
+
 class RoundRobinDateOptionsParser:
 
     def __init__(self, custom_options=""):
@@ -213,11 +215,11 @@ class RoundRobinDateOptionsParser:
         if isinstance(input, date):
             return input
         else:
-            parsed_date = self._parse_string_date(input)
-            return parsed_date
+            date_object = self._parse_string_date_and_return_date_object(input)
+            return date_object
 
-    def _parse_string_date(self, input):
-        if len(input) < 10:
+    def _parse_string_date_and_return_date_object(self, input):
+        if not len(input) == 10:
             raise Exception("Invalid string date: must be in ISO 8601 format,"
                             "'YYYY-MM-DD'")
         date_pieces = {
@@ -225,12 +227,12 @@ class RoundRobinDateOptionsParser:
             "month": int(input[5:7]),
             "day": int(input[8:10])
         }
-        parsed_date = date(
+        parsed_date_object = date(
             date_pieces.get("year"),
             date_pieces.get("month"),
             date_pieces.get("day"),
         )
-        return parsed_date
+        return parsed_date_object
 
     def _parse_backup_options(self):
         anchor_date = self.options.get("anchor_date")
@@ -268,7 +270,7 @@ class RoundRobinDateOptionsParser:
         day_of_month = self._parse_option_day_of_month()
         month_of_year = self._parse_option_month_of_year()
         day_of_month, month_of_year = self._verify_day_of_month(day_of_month,\
-                                                                month_of_year)
+                month_of_year)
         self.options["backup_day_of_week"] = day_of_week
         self.options["backup_day_of_month"] = day_of_month
         self.options["backup_month_of_year"] = month_of_year
