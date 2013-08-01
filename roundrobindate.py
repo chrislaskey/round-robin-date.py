@@ -193,10 +193,6 @@ class RoundRobinDateOptionsParser:
         return default_options
 
     def set_options(self, new_options):
-        """
-        Update options, with either a complete or partial options dictionary.
-        If partial the new options are merged with current options dictionary.
-        """
         if new_options:
             self.options.update(new_options)
             self._parse_options()
@@ -208,10 +204,73 @@ class RoundRobinDateOptionsParser:
 
     def _parse_current_date_options(self):
         current_date = self.options.get("current_date")
-        parsed_current_date = self._parse_date(current_date)
+        parsed_current_date = RRDDateParser().parse(current_date)
         self.options["current_date"] = parsed_current_date
 
-    def _parse_date(self, input):
+    def _parse_backup_options(self):
+        parser = self._get_backup_options_parser()
+        day_of_week = parser.get('day_of_week')
+        day_of_month = parser.get('day_of_month')
+        month_of_year = parser.get('month_of_year')
+        
+        day_of_month, month_of_year = self._verify_day_of_month(day_of_month,
+                month_of_year)
+
+        self.options["backup_day_of_week"] = day_of_week
+        self.options["backup_day_of_month"] = day_of_month
+        self.options["backup_month_of_year"] = month_of_year
+
+    def _get_backup_options_parser(self):
+        """
+        If anchor_date option is set, return parser that uses anchor date to
+        determine day, month, year values. Otherwise return parser that uses
+        explicit day, month and year backup options.
+        """
+        anchor_date = self.options.get("anchor_date")
+        if anchor_date:
+            anchor_date_object = RRDDateParser().parse(anchor_date)
+            self.options["anchor_date"] = anchor_date_object
+            parser = RRDAnchorDateParser(self.options)
+        else:
+            parser = RRDOptionsDateParser(self.options)
+        return parser
+
+    def _verify_day_of_month(self, day_of_month, month_of_year):
+        if day_of_month > 28:
+            if self.options.get("auto_correct_backup_dates"):
+                day_of_month = 1
+                month_of_year = self._get_next_month(month_of_year)
+            else:
+                raise Exception("Value for the option 'anchor_date' must not "
+                                "return a day of the month greater than 28. "
+                                "Given '{0}'".format(day_of_month))
+        return (day_of_month, month_of_year)
+
+    def _get_next_month(self, month):
+        if month == 12:
+            month = 1
+        else:
+            month = month + 1
+        return month
+
+    def _parse_retain_options(self):
+        options_with_numeric_values = [
+            "days_to_retain",
+            "weeks_to_retain",
+            "months_to_retain",
+            "years_to_retain"
+        ]
+        for key, value in self.options.iteritems():
+            if key in options_with_numeric_values:
+                self.options[key] = int(value)
+
+    def get_options(self):
+        return self.options.copy()
+
+
+class RRDDateParser:
+    " Returns a datetime date object based on ISO 8601 string format "
+    def parse(self, input):
         if isinstance(input, date):
             return input
         else:
@@ -234,46 +293,41 @@ class RoundRobinDateOptionsParser:
         )
         return parsed_date_object
 
-    def _parse_backup_options(self):
+
+class RRDAnchorDateParser:
+    """
+    Returns backup_day_of_week, backup_day_of_month and backup_month_of_year
+    values parsed from anchor_date option value
+    """
+    def __init__(self, options):
+        self.options = options
+        self.parsed = {}
+        self._parse()
+
+    def _parse(self):
         anchor_date = self.options.get("anchor_date")
-        if anchor_date:
-            self._parse_anchor_date()
-            self._set_backup_day_options_based_on_anchor_date()
-        else:
-            self._parse_backup_day_options()
+        self.parsed["day_of_week"] = anchor_date.isoweekday()
+        self.parsed["day_of_month"] = anchor_date.day
+        self.parsed["month_of_year"] = anchor_date.month
 
-    def _parse_anchor_date(self):
-        anchor_date = self.options.get("anchor_date")
-        parsed_anchor_date = self._parse_date(anchor_date)
-        self.options["anchor_date"] = parsed_anchor_date
+    def get(self, value):
+        return self.parsed[value]
 
-    def _set_backup_day_options_based_on_anchor_date(self):
-        anchor_date = self.options.get("anchor_date")
-        day_of_week = anchor_date.isoweekday()
-        day_of_month = anchor_date.day
-        month_of_year = anchor_date.month
-        day_of_month, month_of_year = self._verify_day_of_month(day_of_month,\
-                                                                month_of_year)
-        self.options["backup_day_of_week"] = day_of_week
-        self.options["backup_day_of_month"] = day_of_month
-        self.options["backup_month_of_year"] = month_of_year
 
-    def _get_next_month(self, month):
-        if month == 12:
-            month = 1
-        else:
-            month = month + 1
-        return month
+class RRDOptionsDateParser:
+    """
+    Returns backup_day_of_week, backup_day_of_month and backup_month_of_year
+    values parsed from options
+    """
+    def __init__(self, options):
+        self.options = options
+        self.parsed = {}
+        self._parse()
 
-    def _parse_backup_day_options(self):
-        day_of_week = self._parse_option_day_of_week()
-        day_of_month = self._parse_option_day_of_month()
-        month_of_year = self._parse_option_month_of_year()
-        day_of_month, month_of_year = self._verify_day_of_month(day_of_month,\
-                month_of_year)
-        self.options["backup_day_of_week"] = day_of_week
-        self.options["backup_day_of_month"] = day_of_month
-        self.options["backup_month_of_year"] = month_of_year
+    def _parse(self):
+        self.parsed["day_of_week"] = self._parse_option_day_of_week()
+        self.parsed["day_of_month"] = self._parse_option_day_of_month()
+        self.parsed["month_of_year"] = self._parse_option_month_of_year()
 
     def _parse_option_day_of_week(self):
         day_of_week = self.options.get("backup_day_of_week")
@@ -302,27 +356,5 @@ class RoundRobinDateOptionsParser:
                             "Given '{0}'".format(month_of_year))
         return month_of_year
 
-    def _verify_day_of_month(self, day_of_month, month_of_year):
-        if day_of_month > 28:
-            if not self.options.get("auto_correct_backup_dates"):
-                raise Exception("Value for the option 'anchor_date' must not "
-                                "return a day of the month greater than 28. "
-                                "Given '{0}'".format(day_of_month))
-            else:
-                day_of_month = 1
-                month_of_year = self._get_next_month(month_of_year)
-        return (day_of_month, month_of_year)
-
-    def _parse_retain_options(self):
-        options_with_numeric_values = [
-            "days_to_retain",
-            "weeks_to_retain",
-            "months_to_retain",
-            "years_to_retain"
-        ]
-        for key, value in self.options.iteritems():
-            if key in options_with_numeric_values:
-                self.options[key] = int(value)
-
-    def get_options(self):
-        return self.options.copy()
+    def get(self, value):
+        return self.parsed[value]
